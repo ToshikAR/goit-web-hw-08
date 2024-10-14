@@ -1,0 +1,18 @@
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: ${RABBITMQ_M08_CONTAINER_NAME}
+    env_file:
+      - ../.env
+    ports:
+      - "${RABBITMQ_M08_PORT_R}:${RABBITMQ_M08_PORT_R}"
+      - "${RABBITMQ_M08_PORT_M}:${RABBITMQ_M08_PORT_M}"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_M08_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_M08_PASS}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+volumes:
+  rabbitmq_data:
