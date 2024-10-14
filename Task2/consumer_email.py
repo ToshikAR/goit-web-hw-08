@@ -1,8 +1,9 @@
+import os
+import sys
 from datetime import datetime
 
 from config.model import Contact
 from config.config import channel, connect
-from config.decorators import error_decorator
 
 
 def main():
@@ -12,7 +13,7 @@ def main():
 
     def callback(ch, method, properties, body):
         contact_id = body.decode()
-        contact = Contact.objects(id=contact_id).first()
+        contact = Contact.objects(id=contact_id, message_method=queue_email).first()
         if contact and not contact.email_sent:
             contact.email_sent = True
             contact.date_notify = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -29,4 +30,11 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("Interrupted")
+        try:
+            sys.exit(0)
+        except SystemExit:
+            os._exit(0)

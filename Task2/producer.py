@@ -1,3 +1,4 @@
+import random
 import pika
 from faker import Faker
 import pika.spec
@@ -16,34 +17,45 @@ def seed_contacts(qty):
         contact = Contact(
             fullname=faker.name(),
             email=faker.email(),
+            phone=faker.phone_number(),
             date_notify="...",
+            message_method=random.choice(["email", "sms"]),
         )
         contact.save()
-        yield str(contact.id)
+        yield contact
 
 
-def send_to_queue(contact_ids: list):
+def send_to_queue(contacts: list):
     queue_email = "email"
+    queue_sms = "sms"
     exchange = "web25_exchange"
 
     channel.exchange_declare(exchange=exchange, exchange_type="direct")
     channel.queue_declare(queue=queue_email, durable=True)
     channel.queue_bind(exchange=exchange, queue=queue_email)
 
-    for contact_id in contact_ids:
+    channel.queue_declare(queue=queue_sms, durable=True)
+    channel.queue_bind(exchange=exchange, queue=queue_sms)
+
+    for contact in contacts:
+        if contact.message_method == "email":
+            iqueue = queue_email
+        else:
+            iqueue = queue_sms
         channel.basic_publish(
             exchange=exchange,
-            routing_key=queue_email,
-            body=contact_id.encode(),
+            routing_key=iqueue,
+            body=str(contact.id).encode("utf-8"),
             properties=pika.BasicProperties(
                 delivery_mode=pika.spec.PERSISTENT_DELIVERY_MODE,
             ),
         )
-        print(f"Sent contact ID to queue: {contact_id}")
+        print(f"Sent contact ID to queue: {contact.id}")
     connection.close()
 
 
 if __name__ == "__main__":
-    qty_contact = 3
+    qty_contact = 10
     contact_ids = list(seed_contacts(qty_contact))
     send_to_queue(contact_ids)
+    # test(contact_ids)
